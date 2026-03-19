@@ -6,11 +6,11 @@ const Welcome = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // 🔹 Revisar si hay token en localStorage
+    // Revisar si hay token en localStorage
     const token = localStorage.getItem("access_token");
 
     if (!token) {
-      // 🔹 Si no hay token, redirige al login
+      // Si no hay token, redirige al login
       navigate("/login");
     } else {
       // Si hay token, podemos guardar datos del usuario
@@ -29,7 +29,7 @@ const Welcome = () => {
     return null;
   }
 
-  // 🔹 Función para cerrar sesión
+  // Función para cerrar sesión
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     navigate("/login");
