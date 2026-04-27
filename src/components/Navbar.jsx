@@ -1,16 +1,36 @@
-import { Navbar, Nav, Container } from "react-bootstrap";
+import { Navbar, Nav, Container, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
-function NavbarComponent() {
+function NavbarComponent({ onLogout, username }) {
+  const navigate = useNavigate();
+
   return (
     <Navbar bg="primary" variant="dark">
       <Container>
         <Navbar.Brand>BusinessNet</Navbar.Brand>
 
         <Nav className="me-auto">
-          <Nav.Link href="/">Inicio</Nav.Link>
-          <Nav.Link href="/login">Login</Nav.Link>
-          <Nav.Link href="/register">Registro</Nav.Link>
+          <Nav.Link href="/feed">Inicio</Nav.Link>
         </Nav>
+
+        {username && (
+          <Nav className="ms-auto align-items-center gap-2">
+            <Button
+              variant="outline-light"
+              size="sm"
+              onClick={() => navigate("/profile")}
+            >
+              👤 {username}
+            </Button>
+            <Button
+              variant="outline-light"
+              size="sm"
+              onClick={onLogout}
+            >
+              Cerrar sesión
+            </Button>
+          </Nav>
+        )}
       </Container>
     </Navbar>
   );

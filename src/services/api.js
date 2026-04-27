@@ -1,16 +1,10 @@
-/**
- * Servicio API - Cliente HTTP para consumir microservicios
- */
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { MS_AUTH_URL } from '../config';
- 
-// Crear instancia de axios
+import { MS_AUTH_URL, MS_POSTS_URL } from '../config';
+
 const api = axios.create({
   timeout: 120000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  headers: { 'Content-Type': 'application/json' }
 });
  
 // Interceptor para agregar token JWT a todas las peticiones
@@ -23,9 +17,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
  
 // Interceptor para manejar errores de respuesta
@@ -83,6 +75,36 @@ export const authService = {
     return response.data;
   },
  
+  register: async (data) => {
+    const response = await api.post(`${MS_AUTH_URL}/register`, data);
+    return response.data;
+  },
+};
+
+// ── Posts ─────────────────────────────────────────────────────────────────────
+export const postService = {
+  getPosts: async () => {
+    const response = await api.get(`${MS_POSTS_URL}/`);
+    return response.data;
+  },
+  createPost: async (formData) => {
+    const response = await api.post(`${MS_POSTS_URL}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+  likePost: async (postId) => {
+    const response = await api.post(`${MS_POSTS_URL}/${postId}/like`);
+    return response.data;
+  },
+  commentPost: async (postId, contenido) => {
+    const response = await api.post(`${MS_POSTS_URL}/${postId}/comment`, { contenido });
+    return response.data;
+  },
+  deletePost: async (postId) => {
+    const response = await api.delete(`${MS_POSTS_URL}/${postId}`);
+    return response.data;
+  },
 };
  
 export default api;
