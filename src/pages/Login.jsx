@@ -3,6 +3,7 @@ import axios from "axios";
 import NavbarComponent from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
+import { MS_AUTH_URL } from "../config";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -14,16 +15,13 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await axios.post("http://localhost:8001/auth/login", {
+      const res = await axios.post(`${MS_AUTH_URL}/login`, {
         email,
         password
       });
 
-      // Guardar token
       localStorage.setItem("access_token", res.data.access_token);
-      navigate("/welcome");
-
-      console.log("TOKEN:", res.data.access_token);
+      navigate("/profile");
 
     } catch (error) {
       alert(error.response?.data?.detail || "Error en login");
