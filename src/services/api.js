@@ -1,82 +1,48 @@
-/**
- * Servicio API - Cliente HTTP para consumir microservicios
- */
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { MS_AUTH_URL, MS_USER_URL } from '../config';
+import { MS_AUTH_URL, MS_USER_URL, MS_POSTS_URL } from '../config';
 
-// Crear instancia de axios
 const api = axios.create({
   timeout: 120000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  headers: { 'Content-Type': 'application/json' }
 });
 
-// Interceptor para agregar token JWT a todas las peticiones
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    const token = localStorage.getItem('access_token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token inválido o expirado
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem('access_token');
       window.location.href = '/login';
     } else if (error.response?.status === 502 || error.response?.status === 504) {
-      // Error de Gateway (Backend no disponible)
-      console.error('❌ Error de Gateway:', error.response.status);
-      const errorMessage = '⚠️ El servidor no responde. Por favor verifica tu conexión o intenta más tarde.';
-      error.message = errorMessage;
-      // Mostrar toast de error (evitar duplicados verificando si ya existe uno)
+      const msg = '⚠️ El servidor no responde. Intenta más tarde.';
       if (!document.querySelector('.Toastify__toast--error')) {
-        toast.error(errorMessage, {
-          autoClose: 5000,
-          position: 'top-right'
-        });
+        toast.error(msg, { autoClose: 5000 });
       }
     } else if (!error.response) {
-      // Error de red (sin respuesta del servidor)
-      console.error('❌ Error de red:', error.message);
-      const errorMessage = '⚠️ Error de conexión. Por favor verifica tu conexión a internet.';
-      error.message = errorMessage;
+      const msg = '⚠️ Error de conexión. Verifica tu internet.';
       if (!document.querySelector('.Toastify__toast--error')) {
-        toast.error(errorMessage, {
-          autoClose: 5000,
-          position: 'top-right'
-        });
+        toast.error(msg, { autoClose: 5000 });
       }
     }
     return Promise.reject(error);
   }
 );
 
-// ============================================================================
-// AUTH SERVICE
-// ============================================================================
-
+// ── Auth ──────────────────────────────────────────────────────────────────────
 export const authService = {
   login: async (email, password) => {
-    const response = await api.post(`${MS_AUTH_URL}/login`, {
-      email,
-      password
-    });
+    const response = await api.post(`${MS_AUTH_URL}/login`, { email, password });
     return response.data;
   },
-
   me: async () => {
     const response = await api.get(`${MS_AUTH_URL}/me`);
     return response.data;
@@ -84,14 +50,10 @@ export const authService = {
   register: async (data) => {
     const response = await api.post(`${MS_AUTH_URL}/register`, data);
     return response.data;
-  }
-
+  },
 };
 
-// ============================================================================
-// USER SERVICE
-// ============================================================================
-
+// ── Users ─────────────────────────────────────────────────────────────────────
 export const userService = {
   getUsers: async () => {
     const response = await api.get(`${MS_USER_URL}/users`);
@@ -100,7 +62,33 @@ export const userService = {
   getUser: async (id) => {
     const response = await api.get(`${MS_USER_URL}/users/${id}`);
     return response.data;
-  }
+  },
+};
+
+// ── Posts ─────────────────────────────────────────────────────────────────────
+export const postService = {
+  getPosts: async () => {
+    const response = await api.get(`${MS_POSTS_URL}/`);
+    return response.data;
+  },
+  createPost: async (formData) => {
+    const response = await api.post(`${MS_POSTS_URL}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+  likePost: async (postId) => {
+    const response = await api.post(`${MS_POSTS_URL}/${postId}/like`);
+    return response.data;
+  },
+  commentPost: async (postId, contenido) => {
+    const response = await api.post(`${MS_POSTS_URL}/${postId}/comment`, { contenido });
+    return response.data;
+  },
+  deletePost: async (postId) => {
+    const response = await api.delete(`${MS_POSTS_URL}/${postId}`);
+    return response.data;
+  },
 };
 
 export default api;

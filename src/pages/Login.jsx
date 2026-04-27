@@ -21,7 +21,7 @@ export default function Login() {
 
       // Guardar token
       localStorage.setItem("access_token", res.data.access_token);
-      navigate("/welcome");
+      navigate("/feed");
 
       console.log("TOKEN:", res.data.access_token);
 
