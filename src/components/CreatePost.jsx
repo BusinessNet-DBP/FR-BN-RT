@@ -1,13 +1,14 @@
 import { useState, useRef } from "react";
 import { postService } from "../services/api";
+import { MS_POSTS_BASE, MS_AUTH_BASE } from "../config";
 
 const CreatePost = ({ currentUser, onPostCreated }) => {
-  const [texto, setTexto]               = useState("");
-  const [mediaFile, setMediaFile]       = useState(null);
+  const [texto, setTexto] = useState("");
+  const [mediaFile, setMediaFile] = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
-  const [mediaType, setMediaType]       = useState(null);
-  const [loading, setLoading]           = useState(false);
-  const [error, setError]               = useState("");
+  const [mediaType, setMediaType] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const imgRef = useRef();
   const vidRef = useRef();
 
@@ -29,17 +30,15 @@ const CreatePost = ({ currentUser, onPostCreated }) => {
   };
 
   const handlePublish = async () => {
-    // Validación: texto obligatorio siempre
     if (!texto.trim()) {
       setError("✍️ Agrega una descripción antes de publicar.");
       return;
     }
-
     setError("");
     setLoading(true);
 
     const previewActual = mediaPreview;
-    const tipoActual    = mediaType;
+    const tipoActual = mediaType;
 
     try {
       const formData = new FormData();
@@ -50,16 +49,17 @@ const CreatePost = ({ currentUser, onPostCreated }) => {
       try {
         newPost = await postService.createPost(formData);
       } catch {
+        // Fallback optimista si el backend falla
         newPost = {
           id: Date.now(),
           usuario_id: currentUser?.id || 0,
           contenido: texto,
           imagen_url: tipoActual === "image" ? previewActual : null,
-          video_url:  tipoActual === "video" ? previewActual : null,
+          video_url: tipoActual === "video" ? previewActual : null,
           fecha_creacion: new Date().toISOString(),
           perfil: {
-            nombre:   currentUser?.nombre || currentUser?.username || "Tú",
-            foto_url: null,
+            nombre: currentUser?.nombre || currentUser?.username || "Tú",
+            foto_url: currentUser?.foto_url || null,   // ✅ sin duplicado
           },
           likes_count: 0,
           comentarios: [],
@@ -77,10 +77,23 @@ const CreatePost = ({ currentUser, onPostCreated }) => {
 
   const initials = (currentUser?.nombre || currentUser?.username || "U")[0].toUpperCase();
 
+  // ✅ construir URL del avatar correctamente
+  const fotoRaw = currentUser?.foto_url || null;
+  const avatarUrl = fotoRaw
+    ? (fotoRaw.startsWith("http") || fotoRaw.startsWith("blob")
+      ? fotoRaw
+      : `${MS_AUTH_BASE}/${fotoRaw.replace(/^\//, "")}`)
+    : null;
+
   return (
     <div className="create-post-card">
       <div className="create-post-header">
-        <div className="avatar">{initials}</div>
+        <div className="avatar">
+          {avatarUrl
+            ? <img src={avatarUrl} alt={initials}
+              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+            : initials}
+        </div>
         <span style={{ color: "var(--bn-muted)", fontSize: "0.9rem" }}>
           ¿Qué está pasando en tu emprendimiento?
         </span>
@@ -95,14 +108,8 @@ const CreatePost = ({ currentUser, onPostCreated }) => {
         style={error ? { borderColor: "var(--bn-danger)" } : {}}
       />
 
-      {/* Mensaje de error */}
       {error && (
-        <p style={{
-          color: "var(--bn-danger)",
-          fontSize: "0.83rem",
-          marginTop: "8px",
-          fontFamily: "'DM Sans', sans-serif",
-        }}>
+        <p style={{ color: "var(--bn-danger)", fontSize: "0.83rem", marginTop: "8px" }}>
           {error}
         </p>
       )}
@@ -120,29 +127,16 @@ const CreatePost = ({ currentUser, onPostCreated }) => {
         <div className="create-post-media">
           <label className="btn-media">
             🖼️ Imagen
-            <input
-              type="file"
-              accept="image/*"
-              ref={imgRef}
-              onChange={(e) => handleMedia(e, "image")}
-            />
+            <input type="file" accept="image/*" ref={imgRef}
+              onChange={(e) => handleMedia(e, "image")} />
           </label>
           <label className="btn-media">
             🎥 Video
-            <input
-              type="file"
-              accept="video/*"
-              ref={vidRef}
-              onChange={(e) => handleMedia(e, "video")}
-            />
+            <input type="file" accept="video/*" ref={vidRef}
+              onChange={(e) => handleMedia(e, "video")} />
           </label>
         </div>
-
-        <button
-          className="btn-publish"
-          onClick={handlePublish}
-          disabled={loading}
-        >
+        <button className="btn-publish" onClick={handlePublish} disabled={loading}>
           {loading ? "Publicando..." : "Publicar"}
         </button>
       </div>

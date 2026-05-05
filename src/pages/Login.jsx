@@ -4,39 +4,39 @@ import NavbarComponent from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
 import { MS_AUTH_URL } from "../config";
-
+ 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+ 
   const navigate = useNavigate();
-
+ 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+ 
     try {
       const res = await axios.post(`${MS_AUTH_URL}/login`, {
         email,
         password
       });
-
+ 
       localStorage.setItem("access_token", res.data.access_token);
-      navigate("/profile");
-
+      navigate("/feed"); // ← corregido: antes redirigía a /profile
+ 
     } catch (error) {
       alert(error.response?.data?.detail || "Error en login");
     }
   };
-
+ 
   return (
     <div>
       <NavbarComponent />
-
+ 
       <div className="container mt-5">
         <div className="col-md-4 mx-auto">
           <div className="card p-4 shadow login-card">
             <h4 className="text-center mb-3">Iniciar Sesión</h4>
-
+ 
             <form onSubmit={handleLogin}>
               <input
                 type="email"
@@ -45,7 +45,7 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
-
+ 
               <input
                 type="password"
                 className="form-control mb-3"
@@ -53,15 +53,22 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-
+ 
               <button className="btn btn-primary w-100">
                 Ingresar
               </button>
             </form>
+ 
+            <p className="text-center mt-3 mb-0" style={{ fontSize: "0.875rem" }}>
+              ¿No tienes cuenta?{" "}
+              <a href="/register" className="text-primary">
+                Regístrate
+              </a>
+            </p>
           </div>
         </div>
       </div>
-
+ 
       <Footer />
     </div>
   );

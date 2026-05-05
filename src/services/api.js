@@ -1,16 +1,14 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { MS_AUTH_URL, MS_POSTS_URL } from '../config';
-
+ 
 const api = axios.create({
   timeout: 120000,
   headers: { 'Content-Type': 'application/json' }
 });
  
-// Interceptor para agregar token JWT a todas las peticiones
 api.interceptors.request.use(
   (config) => {
-    // ✅ Cambiado: el backend guarda el token como 'access_token'
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -20,13 +18,10 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
  
-// Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token inválido o expirado
-      // ✅ Cambiado: limpiar las mismas keys que usa el backend
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
       window.location.href = '/login';
@@ -49,12 +44,7 @@ api.interceptors.response.use(
   }
 );
  
-// ============================================================================
-// AUTH SERVICE
-// ============================================================================
- 
 export const authService = {
- 
   login: async (email, password) => {
     const response = await api.post(`${MS_AUTH_URL}/login`, { email, password });
     return response.data;
@@ -65,7 +55,7 @@ export const authService = {
     return response.data;
   },
  
-  // ✅ Cambiado: dos endpoints según tipo de cuenta, y multipart/form-data por la foto
+  // ✅ CORREGIDO: solo una definición de register, con tipoCuenta como parámetro
   register: async (tipoCuenta, formData) => {
     const response = await api.post(
       `${MS_AUTH_URL}/register/${tipoCuenta}`,
@@ -74,14 +64,8 @@ export const authService = {
     );
     return response.data;
   },
- 
-  register: async (data) => {
-    const response = await api.post(`${MS_AUTH_URL}/register`, data);
-    return response.data;
-  },
 };
-
-// ── Posts ─────────────────────────────────────────────────────────────────────
+ 
 export const postService = {
   getPosts: async () => {
     const response = await api.get(`${MS_POSTS_URL}/`);

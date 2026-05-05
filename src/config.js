@@ -9,6 +9,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localho
 export const MS_AUTH_URL = import.meta.env.VITE_MS_AUTH_URL || 'http://localhost:8001/api/v1/auth';
 export const MS_POSTS_URL  = import.meta.env.VITE_MS_POSTS_URL  || 'http://localhost:8003/api/v1/posts';
 export const MS_POSTS_BASE = import.meta.env.VITE_MS_POSTS_BASE || 'http://localhost:8003';
+export const MS_AUTH_BASE = import.meta.env.VITE_MS_AUTH_BASE || 'http://localhost:8001';
 
  
 // Configuración de la aplicación

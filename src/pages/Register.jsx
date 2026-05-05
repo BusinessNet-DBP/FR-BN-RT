@@ -310,7 +310,7 @@ export default function Register() {
 
               <p className="text-center mt-3 mb-0" style={{ fontSize: "0.875rem" }}>
                 ¿Ya tienes cuenta?{" "}
-                <a href="/login" className="text-primary">
+                <a href="/" className="text-primary">
                   Inicia sesión
                 </a>
               </p>

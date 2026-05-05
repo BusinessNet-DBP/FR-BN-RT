@@ -1,34 +1,47 @@
 import { useState } from "react";
 import { postService } from "../services/api";
-import { MS_POSTS_BASE } from "../config";
+import { MS_POSTS_BASE, MS_AUTH_BASE } from "../config";
 
 const timeAgo = (dateStr) => {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  if (!dateStr) return "";
+  // Forzar parseo UTC agregando Z si no tiene info de zona horaria
+  const str = dateStr.toString().includes("Z") || dateStr.toString().includes("+")
+    ? dateStr
+    : dateStr.toString().replace(" ", "T") + "Z";
+  const date = new Date(str);
+  if (isNaN(date.getTime())) return "";
+  const diff = Date.now() - date.getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1)  return "ahora mismo";
+  if (mins < 1) return "ahora mismo";
   if (mins < 60) return `hace ${mins} min`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24)  return `hace ${hrs}h`;
+  if (hrs < 24) return `hace ${hrs}h`;
   return `hace ${Math.floor(hrs / 24)}d`;
 };
 
 const getMediaUrl = (url) => {
   if (!url) return null;
   if (url.startsWith("http") || url.startsWith("blob")) return url;
-  return `${MS_POSTS_BASE}${url}`;
+  return `${MS_POSTS_BASE}/${url.replace(/^\//, "")}`;
+};
+
+const getAvatarUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith("http") || url.startsWith("blob")) return url;
+  return `${MS_AUTH_BASE}/${url.replace(/^\//, "")}`;
 };
 
 const PostCard = ({ post, currentUserId, onDeleted }) => {
-  const [liked, setLiked]               = useState(post.liked_by_me || false);
-  const [likesCount, setLikesCount]     = useState(post.likes_count || 0);
+  const [liked, setLiked] = useState(post.liked_by_me || false);
+  const [likesCount, setLikesCount] = useState(post.likes_count || 0);
   const [showComments, setShowComments] = useState(false);
-  const [comentarios, setComentarios]   = useState(post.comentarios || []);
-  const [newComment, setNewComment]     = useState("");
+  const [comentarios, setComentarios] = useState(post.comentarios || []);
+  const [newComment, setNewComment] = useState("");
   const [sendingComment, setSendingComment] = useState(false);
-  const [deleting, setDeleting]         = useState(false);
-  const [showMenu, setShowMenu]         = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
-  const nombre   = post.perfil?.nombre || post.username || "Usuario";
+  const nombre = post.perfil?.nombre || post.username || "Usuario";
   const initials = nombre[0].toUpperCase();
   const isOwner = currentUserId && String(post.usuario_id) === String(currentUserId);
 
@@ -84,9 +97,10 @@ const PostCard = ({ post, currentUserId, onDeleted }) => {
 
       {/* ── Header ── */}
       <div className="post-header">
-        <div className="avatar">
+        <div className="avatar" style={{ width: 40, height: 40, minWidth: 40, borderRadius: "50%", overflow: "hidden", background: "var(--bn-accent)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, color: "#fff", flexShrink: 0 }}>
           {post.perfil?.foto_url
-            ? <img src={getMediaUrl(post.perfil.foto_url)} alt={nombre} />
+            ? <img src={getAvatarUrl(post.perfil.foto_url)} alt={nombre}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             : initials}
         </div>
         <div className="post-user-info">
