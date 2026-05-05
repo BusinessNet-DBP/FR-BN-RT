@@ -1,4 +1,4 @@
-import { Card, Container, Button } from "react-bootstrap";
+import { Card, Container} from "react-bootstrap";
 
 function WelcomeCard() {
   return (
