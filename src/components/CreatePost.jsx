@@ -1,14 +1,29 @@
 import { useState, useRef } from "react";
 import { postService } from "../services/api";
-import { MS_POSTS_BASE, MS_AUTH_BASE } from "../config";
+import { MS_AUTH_BASE } from "../config";
+import { verificarContenido, MENSAJE_POLITICA } from "../utils/contentFilter";
+
+const CATEGORIAS = [
+  { key: "general",    label: "General" },
+  { key: "tecnologia", label: "💻 Tecnología" },
+  { key: "finanzas",   label: "💰 Finanzas" },
+  { key: "marketing",  label: "📣 Marketing" },
+  { key: "salud",      label: "🏥 Salud" },
+  { key: "educacion",  label: "📚 Educación" },
+  { key: "retail",     label: "🛍️ Retail" },
+  { key: "servicios",  label: "🔧 Servicios" },
+  { key: "agro",       label: "🌱 Agro" },
+  { key: "otro",       label: "✨ Otro" },
+];
 
 const CreatePost = ({ currentUser, onPostCreated }) => {
-  const [texto, setTexto] = useState("");
-  const [mediaFile, setMediaFile] = useState(null);
+  const [texto, setTexto]               = useState("");
+  const [categoria, setCategoria]       = useState("general");
+  const [mediaFile, setMediaFile]       = useState(null);
   const [mediaPreview, setMediaPreview] = useState(null);
-  const [mediaType, setMediaType] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [mediaType, setMediaType]       = useState(null);
+  const [loading, setLoading]           = useState(false);
+  const [error, setError]               = useState("");
   const imgRef = useRef();
   const vidRef = useRef();
 
@@ -34,55 +49,65 @@ const CreatePost = ({ currentUser, onPostCreated }) => {
       setError("✍️ Agrega una descripción antes de publicar.");
       return;
     }
+
+    const { prohibido } = verificarContenido(texto);
+    if (prohibido) {
+      setError(MENSAJE_POLITICA);
+      return;
+    }
+
     setError("");
     setLoading(true);
-
     const previewActual = mediaPreview;
-    const tipoActual = mediaType;
+    const tipoActual    = mediaType;
 
     try {
       const formData = new FormData();
       formData.append("contenido", texto);
+      formData.append("categoria", categoria);
       if (mediaFile) formData.append("media", mediaFile);
 
       let newPost;
       try {
         newPost = await postService.createPost(formData);
       } catch {
-        // Fallback optimista si el backend falla
         newPost = {
           id: Date.now(),
-          usuario_id: currentUser?.id || 0,
-          contenido: texto,
-          imagen_url: tipoActual === "image" ? previewActual : null,
-          video_url: tipoActual === "video" ? previewActual : null,
+          usuario_id:     currentUser?.id || 0,
+          contenido:      texto,
+          categoria,
+          imagen_url:     tipoActual === "image" ? previewActual : null,
+          video_url:      tipoActual === "video" ? previewActual : null,
           fecha_creacion: new Date().toISOString(),
           perfil: {
-            nombre: currentUser?.nombre || currentUser?.username || "Tú",
-            foto_url: currentUser?.foto_url || null,   // ✅ sin duplicado
+            nombre:   currentUser?.nombre_completo || currentUser?.nombre ||
+                      currentUser?.email?.split("@")[0] || "Tú",
+            foto_url: currentUser?.foto_perfil || null,
           },
-          likes_count: 0,
-          comentarios: [],
-          liked_by_me: false,
+          likes_count: 0, comentarios: [], liked_by_me: false, vistas: 0,
         };
       }
 
       onPostCreated(newPost);
       setTexto("");
+      setCategoria("general");
       removeMedia();
     } finally {
       setLoading(false);
     }
   };
 
-  const initials = (currentUser?.nombre || currentUser?.username || "U")[0].toUpperCase();
+  const initials = (
+    currentUser?.nombre_completo ||
+    currentUser?.nombre_negocio ||
+    currentUser?.email || "U"
+  )[0].toUpperCase();
 
-  // ✅ construir URL del avatar correctamente
-  const fotoRaw = currentUser?.foto_url || null;
+  const fotoRaw   = currentUser?.foto_perfil || currentUser?.foto_url || null;
   const avatarUrl = fotoRaw
     ? (fotoRaw.startsWith("http") || fotoRaw.startsWith("blob")
-      ? fotoRaw
-      : `${MS_AUTH_BASE}/${fotoRaw.replace(/^\//, "")}`)
+        ? fotoRaw
+        : `${MS_AUTH_BASE}/${fotoRaw.replace(/^\//, "")}`)
     : null;
 
   return (
@@ -91,7 +116,7 @@ const CreatePost = ({ currentUser, onPostCreated }) => {
         <div className="avatar">
           {avatarUrl
             ? <img src={avatarUrl} alt={initials}
-              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
             : initials}
         </div>
         <span style={{ color: "var(--bn-muted)", fontSize: "0.9rem" }}>
@@ -109,10 +134,28 @@ const CreatePost = ({ currentUser, onPostCreated }) => {
       />
 
       {error && (
-        <p style={{ color: "var(--bn-danger)", fontSize: "0.83rem", marginTop: "8px" }}>
+        <div style={{
+          background: "rgba(229,62,62,0.08)",
+          border: "1px solid rgba(229,62,62,0.3)",
+          borderRadius: 10,
+          padding: "10px 14px",
+          marginTop: 8,
+          color: "var(--bn-danger)",
+          fontSize: "0.83rem",
+          fontFamily: "'DM Sans', sans-serif",
+          lineHeight: 1.5,
+        }}>
           {error}
-        </p>
+        </div>
       )}
+
+      <select
+        className="categoria-select"
+        value={categoria}
+        onChange={(e) => setCategoria(e.target.value)}
+      >
+        {CATEGORIAS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+      </select>
 
       {mediaPreview && (
         <div className="media-preview">
